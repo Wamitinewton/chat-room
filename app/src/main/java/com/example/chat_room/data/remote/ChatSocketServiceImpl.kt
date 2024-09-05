@@ -1,5 +1,6 @@
 package com.example.chat_room.data.remote
 
+import com.example.chat_room.data.remote.dto.MessageDto
 import com.example.chat_room.domain.model.Message
 import com.example.chat_room.util.Resource
 import io.ktor.client.*
@@ -21,24 +22,40 @@ class ChatSocketServiceImpl(
             socket = client.webSocketSession {
                 url("${ChatSocketService.EndPoints.ChatSocket.url}?username=$userName")
             }
-            if (socket?.isActive == true){
+            if (socket?.isActive == true) {
                 Resource.Success(Unit)
             } else Resource.Error("couldn't establish a connection")
-        } catch (e:Exception){
+        } catch (e: Exception) {
             e.printStackTrace()
             Resource.Error(e.localizedMessage ?: "Unknown error!")
         }
     }
 
     override suspend fun sendMessage(message: String) {
-        TODO("Not yet implemented")
+        try {
+            socket?.send(Frame.Text(message))
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     override fun observeMessage(): Flow<Message> {
-        TODO("Not yet implemented")
+        return try {
+            socket?.incoming
+                ?.receiveAsFlow()
+                ?.filter { it is Frame.Text }
+                ?.map {
+                    val json = (it as? Frame.Text)?.readText() ?: ""
+                    val messageDto = Json.decodeFromString<MessageDto>(json)
+                    messageDto.toMessage()
+                } ?: flow { }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            flow { }
+        }
     }
 
     override suspend fun closeSession() {
-        TODO("Not yet implemented")
+        socket?.close()
     }
 }
