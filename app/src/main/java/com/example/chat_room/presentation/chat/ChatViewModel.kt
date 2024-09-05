@@ -31,7 +31,8 @@ class ChatViewModel @Inject constructor(
     private val _toastEvent = MutableSharedFlow<String>()
     val toastEvent = _toastEvent.asSharedFlow()
 
-    init {
+
+    fun connectToChat() {
         getAllMessages()
         savedStateHandle.get<String>("username")?.let { username ->
             viewModelScope.launch {
@@ -59,10 +60,6 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-
-//    fun connectToChat() {
-//
-//    }
 
 
     fun onMessageChange(message: String) {
